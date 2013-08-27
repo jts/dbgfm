@@ -17,14 +17,13 @@ std::string getRandomSequence(size_t n)
 
 int main(int argc, char** argv)
 {
-    printf("Loading FM-index\n");
-    
     if(argc != 2)
     {
         printf("usage: ./dbgfm <reference_prefix>\n");
         exit(EXIT_FAILURE);
     }
 
+    printf("Loading FM-index\n");
     std::string prefix = argv[1];
     std::string test_bwt = prefix + ".bwt";
     FMIndex index(test_bwt, 256);
@@ -32,9 +31,8 @@ int main(int argc, char** argv)
     // Verify that the FM-index data structures are set correctly
     //index.verify(test_bwt);
 
-    std::string test_fa = prefix + ".fa";
-
     // Read the fasta sequence as a single string
+    std::string test_fa = prefix + ".fa";
     printf("Loading %s\n", test_fa.c_str());
     std::ifstream in_fasta(test_fa.c_str());
 
@@ -43,9 +41,8 @@ int main(int argc, char** argv)
     getline(in_fasta, header);
     getline(in_fasta, sequence);
 
-    // Count the number of times the sequence appears in the
-    // FM-index. This must be one if the index is correctly
-    // formed. This test is slow
+    // Count the number of times the reference sequence appears in the
+    // FM-index. This must be 1 if the index is correctly loaded.
     printf("Verifying reference sequence is represented by FM-index\n");
     size_t ref_count = index.count(sequence);
     printf("\treference count: %zu\n", ref_count);
