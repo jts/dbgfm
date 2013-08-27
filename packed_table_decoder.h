@@ -21,10 +21,10 @@
 #define UNPACK_BITS(in) (in) & PACKED_BITS_MASK
 
 // Packed table decoder for characters
-class CharPackedTableDecoder
+class PackedTableDecoder
 {
     public:
-        CharPackedTableDecoder() {}
+        PackedTableDecoder() {}
 
         void initialize(const HuffmanTreeCodec<char>& tree)
         {

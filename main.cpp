@@ -5,5 +5,7 @@ int main()
 {
     printf("starting main\n");
     std::string test_bwt = "/home/jsimpson/simpsonlab/data/references/human.chr20.bwt";
-    FMIndex index(test_bwt);
+    FMIndex index(test_bwt, 256);
+
+    index.verify(test_bwt);
 }

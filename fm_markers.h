@@ -21,7 +21,7 @@
 // 
 struct LargeMarker
 {
-    LargeMarker() : unitIndex(0) {}
+    LargeMarker() : byteIndex(0) {}
 
     // Calculate the actual position in the uncompressed BWT of this marker
     // This is the number of symbols preceding this marker
@@ -33,12 +33,10 @@ struct LargeMarker
     void print() const
     {
         std::cout << "Large marker actual pos: " << getActualPosition() << "\n";
-        std::cout << "Marker unit index: " << unitIndex << "\n";
+        std::cout << "Marker byte index: " << byteIndex << "\n";
         std::cout << "Marker counts: ";
         for(int i = 0; i < BWT_ALPHABET::size; ++i)
-        {
             std::cout << (int)counts.getByIdx(i) << " ";
-        }
         std::cout << "\n";
     }    
 
@@ -50,17 +48,17 @@ struct LargeMarker
             if(counts.getByIdx(i) != rhs.counts.getByIdx(i))
                 return false;
         }
-        return unitIndex == rhs.unitIndex;
+        return byteIndex == rhs.byteIndex;
     }
 
     // The number of times each symbol has been seen up to this marker
     AlphaCount64 counts; 
 
-    // The index in the RLVector of the run that starts after
+    // The index in the compressed string the symbols that starts after
     // this marker. That is, if C = getActualPosition(), then
-    // the run containing the B[C] is at unitIndex. This is not necessary
-    // a valid index if there is a marker after the last symbol in the BWT
-    size_t unitIndex;
+    // the compressed data containing the B[C] is at byteIndex. This is not necessarily
+    // a valid index if there is a marker after the last symbol in the BWT.
+    size_t byteIndex;
 };
 typedef std::vector<LargeMarker> LargeMarkerVector;
 
@@ -70,7 +68,7 @@ typedef std::vector<LargeMarker> LargeMarkerVector;
 // 
 struct SmallMarker
 {
-    SmallMarker() : unitCount(0) {}
+    SmallMarker() : byteCount(0) {}
 
     // Calculate the actual position in the uncompressed BWT of this marker
     // This is the number of symbols preceding this marker
@@ -89,11 +87,8 @@ struct SmallMarker
     // The number of times each symbol has been seen up to this marker
     AlphaCount16 counts; 
 
-    // The number of RL units in this block
-    uint16_t unitCount;
-
-    // The index of the huffman tree used to encode the data
-    uint8_t encoderIdx;
+    // The number of compressed bytes in this block
+    uint16_t byteCount;
 };
 typedef std::vector<SmallMarker> SmallMarkerVector;
 

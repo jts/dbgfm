@@ -17,25 +17,38 @@ FMIndexBuilder::FMIndexBuilder(const std::string& filename,
                                size_t large_sample_rate)
 {
     // Create temporary files for the 3 components of the index
-    std::string str_filename = "dbgfm.str.tmp";
-    std::string sm_filename = "dbgfm.sm.tmp";
-    std::string lm_filename = "dbgfm.lm.tmp";
-
-    mp_str_tmp = new std::ofstream(str_filename.c_str(), std::ios::binary);
-    mp_sm_tmp = new std::ofstream(sm_filename.c_str(), std::ios::binary);
-    mp_lm_tmp = new std::ofstream(lm_filename.c_str(), std::ios::binary);
+    mp_str_tmp = new std::ofstream(getStringFilename().c_str(), std::ios::binary);
+    mp_sm_tmp = new std::ofstream(getSmallMarkerFilename().c_str(), std::ios::binary);
+    mp_lm_tmp = new std::ofstream(getLargeMarkerFilename().c_str(), std::ios::binary);
 
     m_small_sample_rate = small_sample_rate;
     m_large_sample_rate = large_sample_rate;
+
 
     build(filename);
 }
 
 FMIndexBuilder::~FMIndexBuilder()
 {
-    delete mp_str_tmp;
-    delete mp_sm_tmp;
-    delete mp_lm_tmp;
+    assert(mp_str_tmp == NULL);
+    assert(mp_sm_tmp == NULL);
+    assert(mp_lm_tmp == NULL);
+}
+
+std::string FMIndexBuilder::getStringFilename() const
+{
+    return "dbgfm.str";
+}
+
+std::string FMIndexBuilder::getSmallMarkerFilename() const
+{
+    return "dbgfm.sm";
+
+}
+
+std::string FMIndexBuilder::getLargeMarkerFilename() const
+{
+    return "dbgfm.lm";
 }
 
 void FMIndexBuilder::build(const std::string& filename)
@@ -43,6 +56,8 @@ void FMIndexBuilder::build(const std::string& filename)
     // Initialization
     m_str_bytes = 0;
     m_str_symbols = 0;
+    m_num_large_markers_wrote = 0;
+    m_num_small_markers_wrote = 0;
 
     //
     // Step 1: make a symbol -> count map and use it to build a huffman tree
@@ -51,10 +66,9 @@ void FMIndexBuilder::build(const std::string& filename)
     SGABWTReader* p_reader = new SGABWTReader(filename);
 
     // Discard header for now
-    size_t num_strings;
     size_t num_symbols;
     BWFlag flag;
-    p_reader->readHeader(num_strings, num_symbols, flag);
+    p_reader->readHeader(m_strings, num_symbols, flag);
 
     // Read one symbol from the bwt at a time
     char b;
@@ -67,6 +81,8 @@ void FMIndexBuilder::build(const std::string& filename)
     }
 
     HuffmanTreeCodec<char> encoder(count_map);
+    m_decoder.initialize(encoder);
+
     std::cout << "Bits required for string: " << encoder.getRequiredBits(count_map) << "\n";
 
     //
@@ -76,7 +92,7 @@ void FMIndexBuilder::build(const std::string& filename)
     // re-initialize the reader
     delete p_reader;
     p_reader = new SGABWTReader(filename);
-    p_reader->readHeader(num_strings, num_symbols, flag);
+    p_reader->readHeader(m_strings, num_symbols, flag);
 
     // We buffer 128 or 256 symbols at a time and huffman-encode
     // each segment
@@ -97,6 +113,14 @@ void FMIndexBuilder::build(const std::string& filename)
         buildSegment(encoder, buffer);
 
     delete p_reader;
+
+    delete mp_str_tmp;
+    delete mp_sm_tmp;
+    delete mp_lm_tmp;
+
+    mp_str_tmp = NULL;
+    mp_sm_tmp = NULL;
+    mp_lm_tmp = NULL;
 }
 
 void FMIndexBuilder::buildSegment(HuffmanTreeCodec<char>& encoder,
@@ -115,10 +139,10 @@ void FMIndexBuilder::buildSegment(HuffmanTreeCodec<char>& encoder,
     std::vector<uint8_t> output(max_bytes, 0);
 
     size_t bytes = StreamEncode::encode(buffer, encoder, output);
+    mp_str_tmp->write(reinterpret_cast<const char*>(&output[0]), bytes);
 
-/*
     size_t bits_read = 0;
-    CharPackedTableDecoder decoder;
+    PackedTableDecoder decoder;
     decoder.initialize(encoder);
     std::string str;
     StreamEncode::StringDecode sd(str);
@@ -127,7 +151,8 @@ void FMIndexBuilder::buildSegment(HuffmanTreeCodec<char>& encoder,
     std::string e;
     for(size_t i = 0; i < buffer.size(); ++i)
         e.append(1, buffer[i]);
-*/
+
+    assert(e == str);
 //    printf("E: %s\n", e.c_str());
 //    printf("D: %s\n", str.c_str());
 
@@ -138,13 +163,13 @@ void FMIndexBuilder::buildSegment(HuffmanTreeCodec<char>& encoder,
 void FMIndexBuilder::buildMarkers()
 {
     size_t starting_byte = m_str_bytes;
-    
+
     // Do we need to place new large markers?
     while((m_str_symbols / m_large_sample_rate) + 1 > m_num_large_markers_wrote)
     {
         // Build a new large marker with the accumulated counts up to this point
         LargeMarker marker;
-        marker.unitIndex = starting_byte;
+        marker.byteIndex = starting_byte;
         marker.counts = m_runningAC;
         m_prevLargeMarker = marker;
 
@@ -171,7 +196,7 @@ void FMIndexBuilder::buildMarkers()
     
     // Construct the small marker
     SmallMarker smallMarker;
-    smallMarker.unitCount = starting_byte - m_prevLargeMarker.unitIndex;
+    smallMarker.byteCount = starting_byte - m_prevLargeMarker.byteIndex;
     smallMarker.counts = smallAC;        
     m_prevSmallMarker = smallMarker;
 

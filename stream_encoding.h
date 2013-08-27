@@ -42,13 +42,13 @@ namespace StreamEncode
 
     struct BaseCountDecode
     {
-        BaseCountDecode(char targetBase, size_t& targetCount) : m_targetBase(targetBase), 
-                                                                    m_targetCount(targetCount) {}
+        BaseCountDecode(char targetBase, size_t& targetCount) : m_targetRank(BWT_ALPHABET::getRank(targetBase)),
+                                                                m_targetCount(targetCount) {}
         inline void operator()(int rank)
         {
-            m_targetCount += (BWT_ALPHABET::getChar(rank) == m_targetBase);
+            m_targetCount += rank == m_targetRank;
         }
-        char m_targetBase;
+        char m_targetRank;
         size_t& m_targetCount;
     };   
 
@@ -56,7 +56,7 @@ namespace StreamEncode
     struct SingleBaseDecode
     {
         SingleBaseDecode(char& base) : m_base(base) {}
-        inline void operator()(int rank, int /*rl*/)
+        inline void operator()(int rank)
         {
             m_base = BWT_ALPHABET::getChar(rank);
         }
@@ -159,24 +159,27 @@ namespace StreamEncode
             currBit += _writeCode(symEP, currBit, output);
         }
 
-        return (currBit + 1) / 8;
+        return currBit % 8 == 0 ? currBit / 8 : currBit / 8 + 1;
     }
 
-    // Decode a stream into the provided functor
 
 #define DECODE_UNIT uint64_t
 #define DECODE_UNIT_BYTES sizeof(DECODE_UNIT)
 #define DECODE_UNIT_BITS DECODE_UNIT_BYTES * 8
+    // Decode a stream into the provided functor
     // Decompress the data starting at pInput. The read cannot exceed the endpoint given by pEnd. Returns
     // the total number of symbols decoded. The out parameters numBitsDecoded is also set.
     template<typename Functor>
-    inline size_t decode(const CharPackedTableDecoder& decoder, 
+    inline size_t decode(const PackedTableDecoder& decoder, 
                          const unsigned char* pInput, 
                          const unsigned char* pEnd, 
                          size_t targetSymbols, 
                          DECODE_UNIT& numBitsDecoded, 
                          Functor& functor)
     {
+        if(targetSymbols == 0)
+            return 0;
+
         const std::vector<PACKED_DECODE_TYPE>* p_decode_table = decoder.getTable();
         DECODE_UNIT read_length = decoder.getCodeReadLength();
 

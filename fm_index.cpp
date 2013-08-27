@@ -18,33 +18,62 @@
 
 // Parse a BWT from a file
 FMIndex::FMIndex(const std::string& filename, int sampleRate) : m_numStrings(0), 
-                                                                m_numSymbols(0), 
-                                                                m_largeSampleRate(DEFAULT_SAMPLE_RATE_LARGE),
-                                                                m_smallSampleRate(sampleRate)
+                                                                m_numSymbols(0)
 {
+    setSampleRates(DEFAULT_SAMPLE_RATE_LARGE, sampleRate);
+
     std::cout << "Loading " << filename << "\n";
     loadSGABWT(filename);
-    
-    /*
-    assert(false && "initialize huffman");
-    m_rlHuffman = HuffmanTreeCodec<int>();
-    m_rlDecodeTable.initialize(m_rlHuffman);
-
-    assert(false && "reader removed");
-    IBWTReader* pReader = BWTReader::createReader(filename);
-    pReader->read(this);
-
-    //initializeFMIndex();
-    delete pReader;
-    */
 }
 
+//
 void FMIndex::loadSGABWT(const std::string& filename)
 {
     FMIndexBuilder builder(filename, m_smallSampleRate, m_largeSampleRate);
 
+    size_t n = 0;
+
+    // Load the compressed string from the file
+    std::ifstream str_reader(builder.getStringFilename().c_str());
+    n = builder.getNumStringBytes();
+    m_string.resize(n);
+    str_reader.read(reinterpret_cast<char*>(&m_string[0]), n);
+
+    // Load the small markers from the file
+    std::ifstream sm_reader(builder.getSmallMarkerFilename().c_str());
+    n = builder.getNumSmallMarkers();
+    m_smallMarkers.resize(n);
+    sm_reader.read(reinterpret_cast<char*>(&m_smallMarkers[0]), sizeof(SmallMarker) * n);
+    
+    // Load the large markers from the file
+    std::ifstream lm_reader(builder.getLargeMarkerFilename().c_str());
+    n = builder.getNumLargeMarkers();
+    m_largeMarkers.resize(n);
+    lm_reader.read(reinterpret_cast<char*>(&m_largeMarkers[0]), sizeof(LargeMarker) * n);
+
+    m_numStrings = builder.getNumStrings();
+    m_numSymbols = builder.getNumSymbols();
+
+    AlphaCount64 totals = builder.getSymbolCounts();
+    assert(totals.get('$') + 
+           totals.get('A') + 
+           totals.get('C') + 
+           totals.get('G') + 
+           totals.get('T') == m_numSymbols);
+
+    m_predCount.set('$', 0);
+    m_predCount.set('A', totals.get('$')); 
+    m_predCount.set('C', m_predCount.get('A') + totals.get('A'));
+    m_predCount.set('G', m_predCount.get('C') + totals.get('C'));
+    m_predCount.set('T', m_predCount.get('G') + totals.get('G'));
+    assert(m_predCount.get('T') + totals.get('T') == m_numSymbols);
+
+    m_decoder = builder.getDecoder();
+
+    printInfo();
 }
 
+//
 void FMIndex::setSampleRates(size_t largeSampleRate, size_t smallSampleRate)
 {
     m_smallSampleRate = smallSampleRate;
@@ -54,13 +83,46 @@ void FMIndex::setSampleRates(size_t largeSampleRate, size_t smallSampleRate)
     m_largeShiftValue = calculateShiftValue(m_largeSampleRate);
 }
 
-// get the number of markers required to cover the n symbols at sample rate of d
-size_t FMIndex::getNumRequiredMarkers(size_t n, size_t d) const
+// Verify that the index is set up correctly
+// by comparing it to the on-disk version.
+// This is SLOW
+void FMIndex::verify(const std::string& filename)
 {
-    // we place a marker at the beginning (with no accumulated counts), every m_sampleRate
-    // bases and one at the very end (with the total counts)
-    size_t num_markers = (n % d == 0) ? (n / d) + 1 : (n / d) + 2;
-    return num_markers;
+    SGABWTReader* p_reader = new SGABWTReader(filename);
+
+    // Discard header for now
+    size_t n1, n2;
+    BWFlag flag;
+    p_reader->readHeader(n1, n2, flag);
+
+
+    AlphaCount64 running_count;
+    // Read one symbol from the bwt at a time
+    size_t i = 0;
+    char b;
+    while((b = p_reader->readChar()) != '\n')
+    {
+        // Verify that the symbol at position i matches the symbol
+        // read from the disk
+        char s = getChar(i);
+        assert(s == b);
+
+        // Verifiy that the counts interpolated from the markers
+        // are correct
+        running_count.increment(b);
+        
+        // single symbol count
+        size_t occ = getOcc(s, i);
+        assert(occ == running_count.get(b));
+        
+        // full count
+        AlphaCount64 full_occ = getFullOcc(i);
+        assert(full_occ == running_count);
+
+        i++;
+    }
+    printf("Verified all %zu match expected\n", i);
+    delete p_reader;
 }
 
 // Print the BWT

@@ -15,6 +15,7 @@
 #include "alphabet.h"
 #include "fm_markers.h"
 #include "huffman_tree_codec.h"
+#include "packed_table_decoder.h"
 
 class FMIndexBuilder
 {
@@ -23,12 +24,33 @@ class FMIndexBuilder
                        size_t small_sample_rate,
                        size_t large_sample_rate);
         ~FMIndexBuilder();
+        
+        // Get the number of bytes in the compressed string
+        size_t getNumStringBytes() const { return m_str_bytes; }
+
+        // Get the number of markers
+        size_t getNumSmallMarkers() const { return m_num_small_markers_wrote; }
+        size_t getNumLargeMarkers() const { return m_num_large_markers_wrote; }
+
+        size_t getNumStrings() const { return m_strings; }
+        size_t getNumSymbols() const { return m_str_symbols; }
+        AlphaCount64 getSymbolCounts() const { return m_runningAC; }
+
+        PackedTableDecoder getDecoder() const { return m_decoder; }
+
+        // Get the filenames that the result is stored in
+        std::string getStringFilename() const;
+        std::string getSmallMarkerFilename() const;
+        std::string getLargeMarkerFilename() const;
  
     private:
         void build(const std::string& filename);
 
         void buildSegment(HuffmanTreeCodec<char>& encoder, const std::deque<char>& buffer);
         void buildMarkers();
+    
+        // the decoding table for the huffman tree we constructed
+        PackedTableDecoder m_decoder;
 
         // the frequency of markers
         size_t m_small_sample_rate;
@@ -39,6 +61,9 @@ class FMIndexBuilder
 
         // the number of symbols written out so far
         size_t m_str_symbols;
+        
+        // the number of strings in the bwt
+        size_t m_strings;
 
         // A running count of the number of ACGT$ written
         AlphaCount64 m_runningAC;

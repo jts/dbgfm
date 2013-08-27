@@ -29,6 +29,10 @@ class FMIndex
         // Constructors
         FMIndex(const std::string& filename, int sampleRate = DEFAULT_SAMPLE_RATE_SMALL);
 
+        // test that the FM-index is correctly initialized
+        // by checking against the on-disk bwt
+        void verify(const std::string& bwt_filename);
+
         //    
         void setSampleRates(size_t largeSampleRate, size_t smallSampleRate);
         void initializeFMIndex(AlphaCount64& running_ac);
@@ -36,32 +40,30 @@ class FMIndex
         inline char getChar(size_t idx) const
         {
             // Decompress stream up to the (idx + 1) character and return the last decompressed symbol
-            size_t encoderIdx = 0;
-            const LargeMarker marker = getLowerMarker(idx, encoderIdx);
+            const LargeMarker marker = getLowerMarker(idx);
             size_t current_position = marker.getActualPosition();
             size_t numToCount = idx - current_position + 1;
             //assert(numToCount < m_smallSampleRate);
-            size_t symbol_index = marker.unitIndex;
+            size_t symbol_index = marker.byteIndex;
             size_t numBitsRead = 0;
 
             char outBase;
             StreamEncode::SingleBaseDecode sbd(outBase);
-            assert(false);
-            //StreamEncode::decodeStream(HuffmanForest::Instance().getDecoder(encoderIdx), m_rlDecodeTable, &m_rlString[symbol_index], &m_rlString.back(), numToCount, numBitsRead, sbd);
+            StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, sbd);
             return outBase;
         }
 
         // Get the greatest interpolated marker whose position is less than or equal to position
-        inline LargeMarker getLowerMarker(size_t position, size_t& encoderIdx) const
+        inline LargeMarker getLowerMarker(size_t position) const
         {
             size_t target_small_idx = position >> m_smallShiftValue;
-            return getInterpolatedMarker(target_small_idx, encoderIdx);
+            return getInterpolatedMarker(target_small_idx);
         }
 
         // Return a LargeMarker with values that are interpolated by adding
         // the relative count nearest to the requested position to the last
         // LargeMarker
-        inline LargeMarker getInterpolatedMarker(size_t target_small_idx, size_t& encoderIdx) const
+        inline LargeMarker getInterpolatedMarker(size_t target_small_idx) const
         {
             // Calculate the position of the LargeMarker that the SmallMarker is relative to
             size_t target_position = target_small_idx << m_smallShiftValue;
@@ -70,8 +72,7 @@ class FMIndex
             assert(target_small_idx < m_smallMarkers.size());
             const SmallMarker& relative = m_smallMarkers[target_small_idx];
             alphacount_add16(absoluteMarker.counts, relative.counts);
-            absoluteMarker.unitIndex += relative.unitCount;
-            encoderIdx = relative.encoderIdx;
+            absoluteMarker.byteIndex += relative.byteCount;
             return absoluteMarker;
         }
 
@@ -80,43 +81,37 @@ class FMIndex
         // Return the number of times char b appears in bwt[0, idx]
         inline size_t getOcc(char b, size_t idx) const
         {
-            // The counts in the marker are not inclusive (unlike the Occurrence class)
-            // so we increment the index by 1.
+            // The counts in the marker are not inclusive so we increment the index by 1.
             ++idx;
 
-            size_t encoderIdx = 0;
-            const LargeMarker marker = getLowerMarker(idx, encoderIdx);
+            const LargeMarker marker = getLowerMarker(idx);
             size_t current_position = marker.getActualPosition();
             size_t numToCount = idx - current_position;
             assert(numToCount < m_smallSampleRate);
             size_t running_count = marker.counts.get(b);
-            size_t symbol_index = marker.unitIndex;
+            size_t symbol_index = marker.byteIndex;
             StreamEncode::BaseCountDecode bcd(b, running_count);
             size_t numBitsRead = 0;
-            assert(false);
-            //StreamEncode::decodeStream(HuffmanForest::Instance().getDecoder(encoderIdx), m_rlDecodeTable, &m_rlString[symbol_index], &m_rlString.back(), numToCount, numBitsRead, bcd);
+            StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, bcd);
             return running_count;
         }
 
         // Return the number of times each symbol in the alphabet appears in bwt[0, idx]
         inline AlphaCount64 getFullOcc(size_t idx) const 
         { 
-            // The counts in the marker are not inclusive (unlike the Occurrence class)
-            // so we increment the index by 1.
+            // The counts in the marker are not inclusive so we increment the index by 1.
             ++idx;
 
-            size_t encoderIdx = 0;
-            const LargeMarker marker = getLowerMarker(idx, encoderIdx);
+            const LargeMarker marker = getLowerMarker(idx);
             size_t current_position = marker.getActualPosition();
             AlphaCount64 running_count = marker.counts;
             size_t numToCount = idx - current_position;
 
             assert(numToCount < m_smallSampleRate);
-            size_t symbol_index = marker.unitIndex;
+            size_t symbol_index = marker.byteIndex;
             StreamEncode::AlphaCountDecode acd(running_count);
             size_t numBitsRead = 0;
-            assert(false);
-            //StreamEncode::decodeStream(HuffmanForest::Instance().getDecoder(encoderIdx), m_rlDecodeTable, &m_rlString[symbol_index], &m_rlString.back(), numToCount, numBitsRead, acd);
+            StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, acd);
             return running_count;
         }
 
@@ -130,6 +125,7 @@ class FMIndex
         inline size_t getBWLen() const { return m_numSymbols; }
         inline size_t getNumBytes() const { return m_string.size(); }
         inline size_t getSmallSampleRate() const { return m_smallSampleRate; }
+
         // Return the first letter of the suffix starting at idx
         inline char getF(size_t idx) const
         {
@@ -166,14 +162,11 @@ class FMIndex
         // Load an SGA-encoded bwt
         void loadSGABWT(const std::string& filename);
 
-        // Calculate the number of markers to place
-        size_t getNumRequiredMarkers(size_t n, size_t d) const;
+        // this class consumes huffman codes and emits the symbols they represent
+        PackedTableDecoder m_decoder;
 
         // The C(a) array
         AlphaCount64 m_predCount;
-        
-        // RL huffman tree
-        HuffmanTreeCodec<int> m_rlHuffman;
         
         // The compressed bwt string
         FMBytes m_string;
