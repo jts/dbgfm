@@ -11,7 +11,7 @@ SGA=~/work/code/sga/src/build/SGA/sga
 
 # Build and link the main program
 dbgfm: $(CPP_SRC) $(CPP_HEADERS)
-		g++ -g -o $@ $(CPP_SRC)
+		g++ -O3 -o $@ $(CPP_SRC)
 
 #
 # Tests
@@ -28,4 +28,4 @@ test: chr20.pp.bwt dbgfm
 		./dbgfm chr20.pp
 
 clean:
-		rm *.o dbgfm chr20*
+		rm *.o dbgfm
