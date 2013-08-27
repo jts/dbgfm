@@ -18,19 +18,26 @@ namespace DBGQuery
     // de Bruijn graph represented by the provided FM-index
     bool isVertex(const FMIndex* index, const std::string& s);
 
-    // Returns true if the k-mer s has a suffix/prefix extension with the symbol b
-    // These functions are reverse-complement aware and will check both strands.
+    // Check for a particular neighbor of k-mer s in the de Bruijn graph.
+    // This uses the (k-1) overlap definition of a de Bruijn graph.
+    //
+    // Let s = aX where X is the (k-1) suffix of s.
+    // If the k-mer Xb exists in the FM-index then
+    // isSuffixNeighbor(index, s, b) will return true.
+    //
+    // Similarily let s = Ya where Y is the (k-1) prefix of s.
+    // If bY exists in index, isPrefixNeighbor(index, s, b) will return true.
+    // These functions are reverse-complement aware so it is sufficient
+    // for either Xb or reverseComplement(Xb) to exist to return true.
     bool isSuffixNeighbor(const FMIndex* index, const std::string& s, char b);
     bool isPrefixNeighbor(const FMIndex* index, const std::string& s, char b);
 
-    // Returns a string representing the neighboring
-    // vertices of the given k-mer s. The neighbors
-    // are encoded by the neighbor's extending
-    // base in the returned string. For example if the 
-    // graph contains these edges:
+    // Returns a string representing the neighbors of k-mer s. The neighbors
+    // are encoded by the single-base extension of the neighboring vertex.
+    // For example if the graph contains these edges:
     //  "ACGT" <-> "CGTA", "ACGT" <-> "CGTG"
-    // then getSuffixNeighbors("ACGT") would return "AG".
-    // These functions are reverse-complement aware and will check both strands.
+    // then getSuffixNeighbors(index, "ACGT") would return "AG".
+    // Like isSuffixNeighbor/isPrefixNeighbor these functions will check both strands.
     std::string getSuffixNeighbors(const FMIndex* index, const std::string& s);
     std::string getPrefixNeighbors(const FMIndex* index, const std::string& s);
 }
