@@ -75,15 +75,18 @@ void FMIndexBuilder::build(const std::string& filename)
     while((b = p_reader->readChar()) != '\n')
         count_map[b]++;
 
+    HuffmanTreeCodec<char> encoder(count_map);
+    m_decoder.initialize(encoder);
+
+    /*
     for(std::map<char, size_t>::iterator iter = count_map.begin();
         iter != count_map.end(); ++iter) {
         printf("%c %zu\n", iter->first, iter->second);
     }
 
-    HuffmanTreeCodec<char> encoder(count_map);
-    m_decoder.initialize(encoder);
 
     std::cout << "Bits required for string: " << encoder.getRequiredBits(count_map) << "\n";
+    */
 
     //
     // Step 2: use the huffman tree to compress the string

@@ -148,7 +148,7 @@ void FMIndex::printInfo() const
     printf("\nFMIndex info:\n");
     printf("Large Sample rate: %zu\n", m_largeSampleRate);
     printf("Small Sample rate: %zu\n", m_smallSampleRate);
-    printf("Contains %zu symbols in %zu bytes (%1.4lf symbols per bytes)\n", m_numSymbols, m_string.size(), (double)m_numSymbols / m_string.size());
+    printf("Contains %zu symbols in %zu bytes (%1.4lf symbols per byte)\n", m_numSymbols, m_string.size(), (double)m_numSymbols / m_string.size());
     printf("Marker Memory -- Small Markers: %zu (%.1lf MB) Large Markers: %zu (%.1lf MB)\n", small_m_size, small_m_size / mb, large_m_size, large_m_size / mb);
     printf("Total Memory -- Markers: %zu (%.1lf MB) Str: %zu (%.1lf MB) Misc: %zu Total: %zu (%lf MB)\n", total_marker_size, total_marker_size / mb, bwStr_size, bwStr_size / mb, other_size, total_size, total_mb);
     printf("N: %zu Bytes per symbol: %lf\n\n", m_numSymbols, (double)total_size / m_numSymbols);

@@ -37,6 +37,31 @@ class FMIndex
         void setSampleRates(size_t largeSampleRate, size_t smallSampleRate);
         void initializeFMIndex(AlphaCount64& running_ac);
 
+        // Count the number of times the string s appears in the original text
+        size_t count(const std::string& s) const
+        {
+            int j = s.size() - 1;
+            char curr = s[j];
+            
+            // Initialize interval to the range for the last symbol of s
+            size_t lower = getPC(curr);
+            size_t upper = lower + getOcc(curr, getBWLen() - 1) - 1;
+
+            --j;
+            for(;j >= 0; --j)
+            {
+                curr = s[j];
+                // update interval
+                size_t p = getPC(curr);
+                lower = p + getOcc(curr, lower - 1);
+                upper = p + getOcc(curr, upper) - 1;
+
+                if(lower > upper)
+                    return 0;
+            }
+            return upper - lower + 1;
+        }
+
         inline char getChar(size_t idx) const
         {
             // Decompress stream up to the (idx + 1) character and return the last decompressed symbol
