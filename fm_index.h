@@ -40,6 +40,7 @@ class FMIndex
         // Count the number of times the string s appears in the original text
         size_t count(const std::string& s) const
         {
+            assert(!s.empty());
             int j = s.size() - 1;
             char curr = s[j];
             

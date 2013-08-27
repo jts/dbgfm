@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     // Verify that the FM-index data structures are set correctly
     //index.verify(test_bwt);
 
-    std::string test_fa = prefix + ".fasta";
+    std::string test_fa = prefix + ".fa";
 
     // Read the fasta sequence as a single string
     printf("Loading %s\n", test_fa.c_str());
@@ -46,8 +46,9 @@ int main(int argc, char** argv)
     // Count the number of times the sequence appears in the
     // FM-index. This must be one if the index is correctly
     // formed. This test is slow
+    printf("Verifying reference sequence is represented by FM-index\n");
     size_t ref_count = index.count(sequence);
-    printf("Ref count: %zu\n", ref_count);
+    printf("\treference count: %zu\n", ref_count);
     assert(ref_count == 1);
 
     // Test the de bruijn query functions using the graph implied by the reference
