@@ -1,4 +1,9 @@
-CPP_SRC := $(wildcard *.cpp)
+default: all
+all: dbgfm bwtdisk-prepare
+CPP_SRC := alphabet.cpp dbg_query.cpp fm_index_builder.cpp \
+           fm_index.cpp main.cpp sga_bwt_reader.cpp utility.cpp \
+           bwtdisk_reader.cpp
+
 CPP_HEADERS := $(wildcard *.h)
 
 # SGA is used to prepare the test data
@@ -12,6 +17,10 @@ SGA=~/work/code/sga/src/build/SGA/sga
 # Build and link the main program
 dbgfm: $(CPP_SRC) $(CPP_HEADERS)
 		g++ -O3 -o $@ $(CPP_SRC)
+
+# Build the helper program
+bwtdisk-prepare: bwtdisk_prepare.cpp
+		g++ -O3 -o $@ $<
 
 #
 # Tests

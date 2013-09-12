@@ -10,6 +10,7 @@
 #include <map>
 #include "fm_index_builder.h"
 #include "sga_bwt_reader.h"
+#include "bwtdisk_reader.h"
 #include "stream_encoding.h"
 
 FMIndexBuilder::FMIndexBuilder(const std::string& filename, 
@@ -63,30 +64,28 @@ void FMIndexBuilder::build(const std::string& filename)
     // Step 1: make a symbol -> count map and use it to build a huffman tree
     //
     std::map<char, size_t> count_map;
-    SGABWTReader* p_reader = new SGABWTReader(filename);
+    BWTDiskReader* p_reader = new BWTDiskReader(filename);
 
     // Discard header for now
-    size_t num_symbols;
-    BWFlag flag;
-    p_reader->readHeader(m_strings, num_symbols, flag);
+    p_reader->discardHeader();
 
     // Read one symbol from the bwt at a time
     char b;
-    while((b = p_reader->readChar()) != '\n')
+
+    while((b = p_reader->readChar()) != '\n') {
         count_map[b]++;
+    }
 
     HuffmanTreeCodec<char> encoder(count_map);
     m_decoder.initialize(encoder);
+    m_strings = count_map['$'];
 
-    /*
     for(std::map<char, size_t>::iterator iter = count_map.begin();
         iter != count_map.end(); ++iter) {
         printf("%c %zu\n", iter->first, iter->second);
     }
 
-
     std::cout << "Bits required for string: " << encoder.getRequiredBits(count_map) << "\n";
-    */
 
     //
     // Step 2: use the huffman tree to compress the string
@@ -94,11 +93,10 @@ void FMIndexBuilder::build(const std::string& filename)
 
     // re-initialize the reader
     delete p_reader;
-    p_reader = new SGABWTReader(filename);
-    p_reader->readHeader(m_strings, num_symbols, flag);
+    p_reader = new BWTDiskReader(filename);
+    p_reader->discardHeader();
 
-    // We buffer 128 or 256 symbols at a time and huffman-encode
-    // each segment
+    // We buffer 128 or 256 symbols at a time and huffman-encode each segment
     std::deque<char> buffer;
 
     while((b = p_reader->readChar()) != '\n')

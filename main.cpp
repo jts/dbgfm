@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 
     printf("Loading FM-index\n");
     std::string prefix = argv[1];
-    std::string test_bwt = prefix + ".bwt";
+    std::string test_bwt = prefix + ".bwtdisk";
     FMIndex index(test_bwt, 256);
 
     // Verify that the FM-index data structures are set correctly
