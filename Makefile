@@ -27,13 +27,13 @@ bwtdisk-prepare: bwtdisk_prepare.cpp
 #
 
 # Download test data
-chr20.pp.bwt:
+chr20.pp.bwtdisk:
 		wget ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh37/Primary_Assembly/assembled_chromosomes/FASTA/chr20.fa.gz
 		$(SGA) preprocess --permute chr20.fa.gz > chr20.pp.fa
-		$(SGA) index --no-reverse chr20.pp.fa
+		./run_bwtdisk.sh chr20.pp.fa
 
 # Run test
-test: chr20.pp.bwt dbgfm
+test: chr20.pp.bwtdisk dbgfm
 		./dbgfm chr20.pp
 
 clean:

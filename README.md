@@ -20,6 +20,7 @@ To test the code is functioning correctly, you can run:
 
 This will download human chromosome 20, index it with SGA then perform test queries using dbgfm.
 You will need to modify the Makefile to point to your version of SGA.
+This requires [bwtdisk](http://people.unipmn.it/manzini/bwtdisk/) is installed.
 
 ## API
 

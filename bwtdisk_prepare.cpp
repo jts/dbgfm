@@ -1,3 +1,12 @@
+//-----------------------------------------------
+// Copyright 2013 Wellcome Trust Sanger Institute
+// Written by Jared Simpson (js18@sanger.ac.uk)
+// Released under the GPL 
+//-----------------------------------------------
+//
+// bwtdisk_prepare - prepare a FASTA file for indexing
+// with bwtdisk
+//
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -25,16 +34,15 @@ int main(int argc, char** argv)
     // Read the fasta file line by line.
     // When we hit a header we output a symbol separating the current record
     // from the last. Non-ACGT symbols in the records cause an error.
-    bool first = true;
+    size_t n_records = 0;
     while(getline(reader, line)) {
         if(line.empty())
             continue;
         
         if(line[0] == '>') {
 
-            if(!first)
+            if(n_records++ > 0)
                 std::cout << '$';
-            first = false;
         } else {
             if(line.find_first_not_of("ACGT") != std::string::npos) {
                 fprintf(stderr, "Error: non-ACGT base found.\n");
@@ -45,6 +53,6 @@ int main(int argc, char** argv)
         }
     }
 
-    // Print a final dollar sign for the last string
+    // Print a final sentinel for the last string
     std::cout << '$';
 }

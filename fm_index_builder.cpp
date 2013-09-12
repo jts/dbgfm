@@ -80,12 +80,14 @@ void FMIndexBuilder::build(const std::string& filename)
     m_decoder.initialize(encoder);
     m_strings = count_map['$'];
 
+    /*
     for(std::map<char, size_t>::iterator iter = count_map.begin();
         iter != count_map.end(); ++iter) {
         printf("%c %zu\n", iter->first, iter->second);
     }
 
     std::cout << "Bits required for string: " << encoder.getRequiredBits(count_map) << "\n";
+    */
 
     //
     // Step 2: use the huffman tree to compress the string
