@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/bin/bash
+set -eu
 
 # Prepare the file by concatenating the contigs/sequences into one long string
 # separated by $
