@@ -71,7 +71,7 @@ class FMIndex
             size_t numToCount = idx - current_position + 1;
             //assert(numToCount < m_smallSampleRate);
             size_t symbol_index = marker.byteIndex;
-            size_t numBitsRead = 0;
+            DECODE_UNIT numBitsRead = 0;
 
             char outBase;
             StreamEncode::SingleBaseDecode sbd(outBase);
@@ -117,7 +117,7 @@ class FMIndex
             size_t running_count = marker.counts.get(b);
             size_t symbol_index = marker.byteIndex;
             StreamEncode::BaseCountDecode bcd(b, running_count);
-            size_t numBitsRead = 0;
+            DECODE_UNIT numBitsRead = 0;
             StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, bcd);
             return running_count;
         }
@@ -136,7 +136,7 @@ class FMIndex
             assert(numToCount < m_smallSampleRate);
             size_t symbol_index = marker.byteIndex;
             StreamEncode::AlphaCountDecode acd(running_count);
-            size_t numBitsRead = 0;
+            DECODE_UNIT numBitsRead = 0;
             StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, acd);
             return running_count;
         }
