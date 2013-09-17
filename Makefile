@@ -1,3 +1,5 @@
+PACKAGE=dbgfm
+
 # Programs
 SGA=sga
 
@@ -7,46 +9,62 @@ CXXFLAGS=-g -O3
 # Directories
 prefix=/usr/local
 bindir=$(prefix)/bin
+includedir=$(prefix)/include
+libdir=$(prefix)/lib
+pkgincludedir=$(includedir)/$(PACKAGE)
 
-# Programs to build
-bin_PROGRAMS=dbgfm bwtdisk-prepare
+# Programs and libraries to build
+PROGRAMS=dbgfm bwtdisk-prepare
+LIBRARIES=libdbgfm.a
 
 # Targets
 
-all: $(bin_PROGRAMS)
+all: $(PROGRAMS)
 
 clean:
-	rm -f $(bin_PROGRAMS) *.o
+	rm -f $(PROGRAMS) *.o
 
-install: $(bin_PROGRAMS)
-	install $(bin_PROGRAMS) $(DESTDIR)$(bindir)
+install: $(PROGRAMS)
+	install $(PROGRAMS) $(DESTDIR)$(bindir)
+	install $(LIBRARIES) $(DESTDIR)$(libdir)
+	install -d $(DESTDIR)$(pkgincludedir)
+	install $(HEADERS) $(DESTDIR)$(pkgincludedir)
 
-test: $(bin_PROGRAMS) chr20.pp.dbgfm
+test: $(PROGRAMS) chr20.pp.dbgfm
 
 uninstall:
-	cd $(DESTDIR)$(bindir) && rm -f $(bin_PROGRAMS)
+	-cd $(DESTDIR)$(bindir) && rm -f $(PROGRAMS)
+	-cd $(DESTDIR)$(libdir) && rm -f $(LIBRARIES)
+	-cd $(DESTDIR)$(pkgincludedir) && rm -f $(HEADERS)
+	-rmdir $(DESTDIR)$(pkgincludedir)
 
 .PHONY: all clean install test uninstall
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-# Build dbgfm
+# Headers
 
-dbgfm_SOURCES = alphabet.cpp bwtdisk_reader.cpp dbg_query.cpp \
-	fm_index.cpp fm_index_builder.cpp main.cpp sga_bwt_reader.cpp \
-	utility.cpp
-
-dbgfm_HEADERS = alphabet.h bwtdisk_reader.h dbg_query.h fm_index.h \
+HEADERS = alphabet.h bwtdisk_reader.h dbg_query.h fm_index.h \
 	fm_index_builder.h fm_markers.h huffman_tree_codec.h \
 	packed_table_decoder.h sga_bwt_reader.h sga_rlunit.h \
 	stream_encoding.h utility.h
 
-dbgfm: $(dbgfm_SOURCES) $(dbgfm_HEADERS)
-	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $(dbgfm_SOURCES) $(LIBS)
+# Build libdbgfm.a
+
+libdbgfm_a_OBJECTS = alphabet.o bwtdisk_reader.o dbg_query.o \
+	fm_index.o fm_index_builder.o sga_bwt_reader.o utility.o
+
+libdbgfm.a: $(libdbgfm_a_OBJECTS) $(HEADERS)
+	$(AR) crs $@ $(libdbgfm_a_OBJECTS)
+
+# Build dbgfm
+
+dbgfm: main.o libdbgfm.a
+	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 # Build bwtdisk-prepare
 
-bwtdisk-prepare: bwtdisk_prepare.cpp
+bwtdisk-prepare: bwtdisk_prepare.o
 	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 # Tests
