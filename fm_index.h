@@ -78,7 +78,8 @@ class FMIndex
             return p + o;
         }
         
-        // Returns BWT[idx]
+        // Returns BWT[idx]. 
+        // This function will return EOF when SA[idx] == 0
         inline char getChar(size_t idx) const
         {
             // Decompress stream up to the (idx + 1) character and return the last decompressed symbol

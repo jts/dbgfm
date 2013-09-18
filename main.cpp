@@ -33,20 +33,18 @@ int main(int argc, char** argv)
     
     // Read the input sequence in its joined form 
     std::string test_file = prefix + ".fa.joined";
-    printf("Loading %s\n", test_file.c_str());
     std::ifstream in_file(test_file.c_str());
 
     std::string sequence;
     getline(in_file, sequence);
 
-    /*
     // Count the number of times the reference sequence appears in the
     // FM-index. This must be 1 if the index is correctly loaded.
-    printf("Verifying reference sequence is represented by FM-index\n");
+    printf("//\n// Verifying input sequence is represented by the FM-index\n//\n");
     size_t ref_count = index.count(sequence);
-    printf("\treference count: %zu\n", ref_count);
+    printf("reference count: %zu\n", ref_count);
     assert(ref_count == 1);
-    */
+    printf("\n");
 
     // Test that extract string is working
     printf("//\n// Testing extractSubstring()\n//\n");
