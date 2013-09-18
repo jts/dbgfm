@@ -40,6 +40,13 @@ namespace DBGQuery
     // Like isSuffixNeighbor/isPrefixNeighbor these functions will check both strands.
     std::string getSuffixNeighbors(const FMIndex* index, const std::string& s);
     std::string getPrefixNeighbors(const FMIndex* index, const std::string& s);
+
+    // Extract a substring of the original text by decompressing a portion
+    // of the FM-index.
+    // idx is the position in the BWT of the last symbol of the substring
+    // len is the length of the substring to extract
+    std::string extractSubstring(const FMIndex* index, size_t idx, size_t len);
+
 }
 
 #endif

@@ -23,11 +23,11 @@ FMIndex::FMIndex(const std::string& filename, int sampleRate) : m_numStrings(0),
     setSampleRates(DEFAULT_SAMPLE_RATE_LARGE, sampleRate);
 
     std::cout << "Loading " << filename << "\n";
-    loadSGABWT(filename);
+    loadBWT(filename);
 }
 
 //
-void FMIndex::loadSGABWT(const std::string& filename)
+void FMIndex::loadBWT(const std::string& filename)
 {
     FMIndexBuilder builder(filename, m_smallSampleRate, m_largeSampleRate);
 
@@ -69,6 +69,7 @@ void FMIndex::loadSGABWT(const std::string& filename)
     assert(m_predCount.get('T') + totals.get('T') == m_numSymbols);
 
     m_decoder = builder.getDecoder();
+    m_eof_pos = builder.getEOFPos();
 
     printInfo();
 }

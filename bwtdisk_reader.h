@@ -20,6 +20,7 @@ class BWTDiskReader
 
         void discardHeader();
         char readChar();
+        size_t getEOFPos() const;
 
     private:
         std::ifstream* m_pReader;

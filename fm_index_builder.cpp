@@ -115,6 +115,8 @@ void FMIndexBuilder::build(const std::string& filename)
     if(!buffer.empty())
         buildSegment(encoder, buffer);
 
+    m_eof_pos = p_reader->getEOFPos();
+
     delete p_reader;
 
     delete mp_str_tmp;

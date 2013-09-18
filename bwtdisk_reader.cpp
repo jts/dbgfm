@@ -12,7 +12,7 @@
 #include "bwtdisk_reader.h"
 
 //
-BWTDiskReader::BWTDiskReader(const std::string& filename) : m_stage(IOS_HEADER)
+BWTDiskReader::BWTDiskReader(const std::string& filename) : m_stage(IOS_HEADER), m_eof_pos(std::string::npos)
 {
     m_pReader = new std::ifstream(filename.c_str());
     if(!m_pReader->is_open())
@@ -35,9 +35,16 @@ void BWTDiskReader::discardHeader()
     
     m_pReader->read((char*)&size, sizeof(size));
     m_pReader->read((char*)&m_eof_pos, sizeof(m_eof_pos));
-
+    
     m_stage = IOS_BWSTR;
     m_num_read = 0;
+}
+
+// Returns the position in the BWT of the first symbol of the text
+size_t BWTDiskReader::getEOFPos() const
+{
+    assert(m_eof_pos != std::string::npos); 
+    return m_eof_pos;
 }
 
 // Read a single base from the BWStr

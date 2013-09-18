@@ -30,34 +30,51 @@ int main(int argc, char** argv)
 
     // Verify that the FM-index data structures are set correctly
     //index.verify(test_bwt);
+    
+    // Read the input sequence in its joined form 
+    std::string test_file = prefix + ".fa.joined";
+    printf("Loading %s\n", test_file.c_str());
+    std::ifstream in_file(test_file.c_str());
 
-    // Read the fasta sequence as a single string
-    std::string test_fa = prefix + ".fa";
-    printf("Loading %s\n", test_fa.c_str());
-    std::ifstream in_fasta(test_fa.c_str());
-
-    std::string header;
     std::string sequence;
-    getline(in_fasta, header);
-    getline(in_fasta, sequence);
+    getline(in_file, sequence);
 
+    /*
     // Count the number of times the reference sequence appears in the
     // FM-index. This must be 1 if the index is correctly loaded.
     printf("Verifying reference sequence is represented by FM-index\n");
     size_t ref_count = index.count(sequence);
     printf("\treference count: %zu\n", ref_count);
     assert(ref_count == 1);
+    */
+
+    // Test that extract string is working
+    printf("//\n// Testing extractSubstring()\n//\n");
+    size_t extract_len = sequence.size() > 1000 ? 1000 : sequence.size();
+    printf("Extracting last %zu symbols of the test sequence\n", extract_len);
+    size_t start_idx = 0;
+    std::string extracted = DBGQuery::extractSubstring(&index, start_idx, 1000);
+    assert(sequence.find(extracted) != std::string::npos);
+    printf("Extracted string matches input sequence\n\n");
 
     // Test the de bruijn query functions using the graph implied by the reference
+    printf("//\n// Testing deBruijn queries for known sequences\n//\n");
     size_t stride = 1000;
     size_t k = 31;
     size_t n_checked = 0;
     size_t n_suffix_branch = 0;
     size_t n_prefix_branch = 0;
-    for(size_t idx = 0; idx < sequence.size() - k; idx += stride)
+    for(size_t idx = 0; idx + k < sequence.size(); idx += stride)
     {
         std::string curr = sequence.substr(idx, k);
         std::string next = sequence.substr(idx + 1, k);
+
+        if(curr.find('$') != std::string::npos || 
+           next.find('$') != std::string::npos)
+            continue;
+
+        if(curr.size() < k || next.size() < k)
+            continue;
 
         // Check whether these k-mers are in the vertex set
         assert(DBGQuery::isVertex(&index, curr));
@@ -89,11 +106,12 @@ int main(int argc, char** argv)
             printf("Checked %zu vertices in the dbg graph [curr idx: %zu]\n", n_checked, idx);
     }
 
-    printf("Done reference graph checks\n");
-    printf("\tnum vertices checked: %zu\n", n_checked);
-    printf("\tnum suffix branches: %zu\n", n_suffix_branch);
-    printf("\tnum prefix branches: %zu\n", n_prefix_branch);
+    printf("num vertices checked: %zu\n", n_checked);
+    printf("num suffix branches: %zu\n", n_suffix_branch);
+    printf("num prefix branches: %zu\n", n_prefix_branch);
+    printf("\n");
 
+    printf("//\n// Testing deBruijn queries for random sequences\n//\n");
     // Check whether random strings are vertices in the graph
     for(size_t k = 11; k <= 31; k += 5)
     {

@@ -35,7 +35,11 @@ class FMIndexBuilder
         size_t getNumStrings() const { return m_strings; }
         size_t getNumSymbols() const { return m_str_symbols; }
         AlphaCount64 getSymbolCounts() const { return m_runningAC; }
+        
+        // the position in the BWT that represents the full-length string
+        size_t getEOFPos() const { return m_eof_pos; }
 
+        // a table to map from huffman symbols to bwt symbols
         PackedTableDecoder getDecoder() const { return m_decoder; }
 
         // Get the filenames that the result is stored in
@@ -64,6 +68,10 @@ class FMIndexBuilder
         
         // the number of strings in the bwt
         size_t m_strings;
+        
+        // the FM-index needs to know which BWT symbol corresponds
+        // to the full-length string. 
+        size_t m_eof_pos;
 
         // A running count of the number of ACGT$ written
         AlphaCount64 m_runningAC;

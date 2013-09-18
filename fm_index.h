@@ -63,6 +63,22 @@ class FMIndex
             return upper - lower + 1;
         }
 
+        // Perform the LF mapping
+        // Let SA[idx] = i.
+        // This function returns idx'
+        // where SA[idx'] = i - 1.
+        //
+        // This function will assert if idx == m_eof_pos
+        inline size_t LF(size_t idx) const
+        {
+            char b = getChar(idx);
+            assert(b != EOF);
+            size_t p = getPC(b);
+            size_t o = idx > 0 ? getOcc(b, idx - 1) : 1;
+            return p + o;
+        }
+        
+        // Returns BWT[idx]
         inline char getChar(size_t idx) const
         {
             // Decompress stream up to the (idx + 1) character and return the last decompressed symbol
@@ -76,7 +92,7 @@ class FMIndex
             char outBase;
             StreamEncode::SingleBaseDecode sbd(outBase);
             StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, sbd);
-            return outBase;
+            return idx != m_eof_pos ? outBase : EOF;
         }
 
         // Get the greatest interpolated marker whose position is less than or equal to position
@@ -186,7 +202,7 @@ class FMIndex
         FMIndex() {}
         
         // Load an SGA-encoded bwt
-        void loadSGABWT(const std::string& filename);
+        void loadBWT(const std::string& filename);
 
         // this class consumes huffman codes and emits the symbols they represent
         PackedTableDecoder m_decoder;
@@ -206,6 +222,13 @@ class FMIndex
 
         // The total length of the bw string
         size_t m_numSymbols;
+        
+        // Within our BWT implemention the symbol
+        // for the full-length suffix is encoded with a $.
+        // When extracting the original text from the BWT, 
+        // we store this position so we know when to stop extracting.
+        // getChar(idx) will return EOF when idx == m_eof_pos
+        size_t m_eof_pos;
 
         // The sample rate used for the markers
         size_t m_largeSampleRate;

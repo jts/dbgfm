@@ -57,3 +57,23 @@ std::string DBGQuery::getPrefixNeighbors(const FMIndex* index, const std::string
     }
     return out;
 }
+
+//
+std::string DBGQuery::extractSubstring(const FMIndex* index, size_t idx, size_t len)
+{
+    std::string out;
+    out.reserve(len);
+
+    while(out.length() < len)
+    {
+        char b = index->getChar(idx);
+        if(b == EOF)
+            break;
+
+        out.push_back(b);
+        idx = index->LF(idx);
+    }
+
+    std::reverse(out.begin(), out.end());
+    return out;
+}
