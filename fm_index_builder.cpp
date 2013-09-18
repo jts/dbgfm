@@ -146,7 +146,7 @@ void FMIndexBuilder::buildSegment(HuffmanTreeCodec<char>& encoder,
     size_t bytes = StreamEncode::encode(buffer, encoder, output);
     mp_str_tmp->write(reinterpret_cast<const char*>(&output[0]), bytes);
 
-    size_t bits_read = 0;
+    DECODE_UNIT bits_read = 0;
     PackedTableDecoder decoder;
     decoder.initialize(encoder);
     std::string str;

@@ -1,40 +1,82 @@
-default: all
-all: dbgfm bwtdisk-prepare
-CPP_SRC := alphabet.cpp dbg_query.cpp fm_index_builder.cpp \
-           fm_index.cpp main.cpp sga_bwt_reader.cpp utility.cpp \
-           bwtdisk_reader.cpp
+PACKAGE=dbgfm
 
-CPP_HEADERS := $(wildcard *.h)
+# Programs
+SGA=sga
 
-# SGA is used to prepare the test data
-# Point this path to your install
-SGA=~/work/code/sga/src/build/SGA/sga
+# Options
+CXXFLAGS=-g -O3
 
-# Build the C object files with gcc
-%.o: %.c
-	gcc -c -o $@ $<
+# Directories
+prefix=/usr/local
+bindir=$(prefix)/bin
+includedir=$(prefix)/include
+libdir=$(prefix)/lib
+pkgincludedir=$(includedir)/$(PACKAGE)
 
-# Build and link the main program
-dbgfm: $(CPP_SRC) $(CPP_HEADERS)
-		g++ -O3 -o $@ $(CPP_SRC)
+# Programs and libraries to build
+PROGRAMS=dbgfm bwtdisk-prepare
+LIBRARIES=libdbgfm.a
 
-# Build the helper program
-bwtdisk-prepare: bwtdisk_prepare.cpp
-		g++ -O3 -o $@ $<
+# Targets
 
-#
-# Tests
-#
-
-# Download test data
-chr20.pp.bwtdisk:
-		wget ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh37/Primary_Assembly/assembled_chromosomes/FASTA/chr20.fa.gz
-		$(SGA) preprocess --permute chr20.fa.gz > chr20.pp.fa
-		./run_bwtdisk.sh chr20.pp.fa
-
-# Run test
-test: chr20.pp.bwtdisk dbgfm
-		./dbgfm chr20.pp
+all: $(PROGRAMS)
 
 clean:
-		rm *.o dbgfm
+	rm -f $(PROGRAMS) *.o
+
+install: $(PROGRAMS)
+	install $(PROGRAMS) $(DESTDIR)$(bindir)
+	install $(LIBRARIES) $(DESTDIR)$(libdir)
+	install -d $(DESTDIR)$(pkgincludedir)
+	install $(HEADERS) $(DESTDIR)$(pkgincludedir)
+
+test: $(PROGRAMS) chr20.pp.dbgfm
+
+uninstall:
+	-cd $(DESTDIR)$(bindir) && rm -f $(PROGRAMS)
+	-cd $(DESTDIR)$(libdir) && rm -f $(LIBRARIES)
+	-cd $(DESTDIR)$(pkgincludedir) && rm -f $(HEADERS)
+	-rmdir $(DESTDIR)$(pkgincludedir)
+
+.PHONY: all clean install test uninstall
+.DELETE_ON_ERROR:
+.SECONDARY:
+
+# Headers
+
+HEADERS = alphabet.h bwtdisk_reader.h dbg_query.h fm_index.h \
+	fm_index_builder.h fm_markers.h huffman_tree_codec.h \
+	packed_table_decoder.h sga_bwt_reader.h sga_rlunit.h \
+	stream_encoding.h utility.h
+
+# Build libdbgfm.a
+
+libdbgfm_a_OBJECTS = alphabet.o bwtdisk_reader.o dbg_query.o \
+	fm_index.o fm_index_builder.o sga_bwt_reader.o utility.o
+
+libdbgfm.a: $(libdbgfm_a_OBJECTS) $(HEADERS)
+	$(AR) crs $@ $(libdbgfm_a_OBJECTS)
+
+# Build dbgfm
+
+dbgfm: main.o libdbgfm.a
+	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+# Build bwtdisk-prepare
+
+bwtdisk-prepare: bwtdisk_prepare.o
+	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+# Tests
+
+chr20.fa.gz:
+	wget ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh37/Primary_Assembly/assembled_chromosomes/FASTA/chr20.fa.gz
+
+%.pp.fa: %.fa.gz
+	$(SGA) preprocess --permute $< >$@
+
+%.bwtdisk: %.fa bwtdisk-prepare
+	./run_bwtdisk.sh $<
+
+%.dbgfm: %.bwtdisk dbgfm
+	./dbgfm $*
