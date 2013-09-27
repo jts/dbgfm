@@ -10,6 +10,7 @@
 #define FMIndex_H
 
 #include <deque>
+#include <utility>
 #include "fm_markers.h"
 #include "stream_encoding.h"
 #include "packed_table_decoder.h"
@@ -37,8 +38,8 @@ class FMIndex
         void setSampleRates(size_t largeSampleRate, size_t smallSampleRate);
         void initializeFMIndex(AlphaCount64& running_ac);
 
-        // Count the number of times the string s appears in the original text
-        size_t count(const std::string& s) const
+        // Return the suffix array interval of the string
+        std::pair<size_t, size_t> interval(const std::string& s) const
         {
             assert(!s.empty());
             int j = s.size() - 1;
@@ -58,9 +59,16 @@ class FMIndex
                 upper = p + getOcc(curr, upper) - 1;
 
                 if(lower > upper)
-                    return 0;
+                    return std::make_pair(lower, lower - 1);
             }
-            return upper - lower + 1;
+            return std::make_pair(lower, upper);
+        }
+
+        // Count the number of occurrences of the string s in the original text
+        size_t count(const std::string& s) const
+        {
+            std::pair<size_t, size_t> x = interval(s);
+            return x.second - x.first + 1;
         }
 
         // Perform the LF mapping
