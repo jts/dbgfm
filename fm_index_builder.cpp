@@ -78,7 +78,8 @@ void FMIndexBuilder::build(const std::string& filename)
 
     HuffmanTreeCodec<char> encoder(count_map);
     m_decoder.initialize(encoder);
-    m_strings = count_map['$'];
+    assert(count_map['$'] > 1);
+    m_strings = count_map['$'] - 1;
 
     /*
     for(std::map<char, size_t>::iterator iter = count_map.begin();
