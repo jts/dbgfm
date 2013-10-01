@@ -39,7 +39,7 @@ class FMIndex
         void initializeFMIndex(AlphaCount64& running_ac);
 
         // Return the suffix array interval of the string
-        std::pair<size_t, size_t> interval(const std::string& s) const
+        std::pair<size_t, size_t> findInterval(const std::string& s) const
         {
             assert(!s.empty());
             int j = s.size() - 1;
@@ -67,7 +67,7 @@ class FMIndex
         // Count the number of occurrences of the string s in the original text
         size_t count(const std::string& s) const
         {
-            std::pair<size_t, size_t> x = interval(s);
+            std::pair<size_t, size_t> x = findInterval(s);
             return x.second - x.first + 1;
         }
 
