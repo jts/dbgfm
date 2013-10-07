@@ -22,7 +22,7 @@ LIBRARIES=libdbgfm.a
 all: $(PROGRAMS)
 
 clean:
-	rm -f $(PROGRAMS) *.o
+	rm -f $(LIBRARIES) $(PROGRAMS) *.o
 
 install: $(PROGRAMS)
 	install $(PROGRAMS) $(DESTDIR)$(bindir)
