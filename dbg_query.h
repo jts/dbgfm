@@ -11,6 +11,8 @@
 #define DBG_QUERY_H
 
 #include "fm_index.h"
+#include <string>
+#include <utility>
 
 namespace DBGQuery
 {
@@ -42,11 +44,21 @@ namespace DBGQuery
     std::string getPrefixNeighbors(const FMIndex* index, const std::string& s);
 
     // Extract a substring of the original text by decompressing a portion
-    // of the FM-index.
+    // of the FM-index. Also return the suffix array index of the
+    // substring.
     // idx is the position in the BWT of the last symbol of the substring
     // len is the length of the substring to extract
-    std::string extractSubstring(const FMIndex* index, size_t idx, size_t len);
+    std::pair<std::string, size_t>
+    extractSubstringAndIndex(const FMIndex* index, size_t idx, size_t len);
 
+    // Extract a substring of the original text.
+    // See extractSubstringAndIndex.
+    static inline
+    std::string
+    extractSubstring(const FMIndex* index, size_t idx, size_t len)
+    {
+        return extractSubstringAndIndex(index, idx, len).first;
+    }
 }
 
 #endif
