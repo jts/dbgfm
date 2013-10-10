@@ -61,7 +61,8 @@ void FMIndex::loadBWT(const std::string& filename)
            totals.get('G') + 
            totals.get('T') == m_numSymbols);
 
-    m_predCount.set('$', 0);
+    // The EOF marker symbol is lexicographically smaller than '$'.
+    m_predCount.set('$', 1);
     m_predCount.set('A', totals.get('$')); 
     m_predCount.set('C', m_predCount.get('A') + totals.get('A'));
     m_predCount.set('G', m_predCount.get('C') + totals.get('C'));

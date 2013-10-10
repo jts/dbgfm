@@ -82,7 +82,7 @@ class FMIndex
             char b = getChar(idx);
             assert(b != EOF);
             size_t p = getPC(b);
-            size_t o = idx > 0 ? getOcc(b, idx - 1) : 1;
+            size_t o = idx > 0 ? getOcc(b, idx - 1) : 0;
             return p + o;
         }
         
@@ -144,6 +144,11 @@ class FMIndex
             StreamEncode::BaseCountDecode bcd(b, running_count);
             DECODE_UNIT numBitsRead = 0;
             StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, bcd);
+            // The EOF marker symbol is stored in the BWT as a '$'.
+            // Subtract one from the count of '$' when the index is
+            // larger than the position of the EOF marker.
+            if (b == '$' && idx > m_eof_pos)
+                --running_count;
             return running_count;
         }
 
