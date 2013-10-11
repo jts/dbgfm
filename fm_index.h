@@ -38,6 +38,16 @@ class FMIndex
         void setSampleRates(size_t largeSampleRate, size_t smallSampleRate);
         void initializeFMIndex(AlphaCount64& running_ac);
 
+        // Update the suffix array interval and return whether the
+        // interval is open
+        bool updateInterval(size_t& lower, size_t& upper, char c) const
+        {
+                size_t p = getPC(c);
+                lower = p + getOcc(c, lower - 1);
+                upper = p + getOcc(c, upper) - 1;
+                return lower <= upper;
+        }
+
         // Return the suffix array interval of the string
         std::pair<size_t, size_t> findInterval(const std::string& s) const
         {
