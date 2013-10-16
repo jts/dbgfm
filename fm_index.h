@@ -108,7 +108,7 @@ class FMIndex
             size_t symbol_index = marker.byteIndex;
             DECODE_UNIT numBitsRead = 0;
 
-            char outBase;
+            char outBase = '\0';
             StreamEncode::SingleBaseDecode sbd(outBase);
             StreamEncode::decode(m_decoder, &m_string[symbol_index], &m_string.back(), numToCount, numBitsRead, sbd);
             return idx != m_eof_pos ? outBase : EOF;
