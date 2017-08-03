@@ -12,6 +12,9 @@
 #include <fstream>
 #include <string>
 #include <stdlib.h>
+#include <time.h>
+
+#include "alphabet.h"
 
 int main(int argc, char** argv)
 {
@@ -31,6 +34,8 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
+    srand(time(NULL));
+
     // Read the fasta file line by line.
     // When we hit a header we output a symbol separating the current record
     // from the last. Non-ACGT symbols in the records cause an error.
@@ -44,9 +49,19 @@ int main(int argc, char** argv)
             if(n_records++ > 0)
                 std::cout << '$';
         } else {
-            if(line.find_first_not_of("ACGT") != std::string::npos) {
-                fprintf(stderr, "Error: non-ACGT base found.\n");
-                exit(EXIT_FAILURE);
+            std::size_t pos = line.find_first_not_of("ACGT");
+            // loop while there are no more ambiguous bases found in line
+            while(pos != std::string::npos) {
+                if(!IUPAC::isValid(line[pos])) {
+                    fprintf(stderr, "Error: invalid IUPAC base found.\n");
+                    exit(EXIT_FAILURE);
+                }
+                std::string possibleSymbols = IUPAC::getPossibleSymbols(line[pos]);
+                // choose a random base from the possible symbols
+                char base = possibleSymbols[rand() % possibleSymbols.length()];
+                line[pos] = base;
+                // get the next ambiguous base
+                pos = line.find_first_not_of("ACGT");
             }
                
             std::cout << line;
