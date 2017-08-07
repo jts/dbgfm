@@ -13,6 +13,8 @@
 #include <string>
 #include <stdlib.h>
 
+#include "alphabet.h"
+
 int main(int argc, char** argv)
 {
 
@@ -44,9 +46,17 @@ int main(int argc, char** argv)
             if(n_records++ > 0)
                 std::cout << '$';
         } else {
-            if(line.find_first_not_of("ACGT") != std::string::npos) {
-                fprintf(stderr, "Error: non-ACGT base found.\n");
-                exit(EXIT_FAILURE);
+            std::size_t pos = line.find_first_not_of("ACGT");
+            // loop while there are no more ambiguous bases found in line
+            while(pos != std::string::npos) {
+                if(!IUPAC::isValid(line[pos])) {
+                    fprintf(stderr, "Error: invalid IUPAC base found.\n");
+                    exit(EXIT_FAILURE);
+                }
+                // get the lexicographically smallest base for the code
+                line[pos] = IUPAC::getPossibleSymbols(line[pos])[0];
+                // get the next ambiguous base
+                pos = line.find_first_not_of("ACGT");
             }
                
             std::cout << line;

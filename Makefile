@@ -65,7 +65,7 @@ dbgfm: main.o libdbgfm.a
 # Build bwtdisk-prepare
 
 bwtdisk-prepare: bwtdisk_prepare.o
-	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CXX) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) -L. -ldbgfm 
 
 # Tests
 
