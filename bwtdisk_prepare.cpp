@@ -54,8 +54,7 @@ int main(int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
                 // get the lexicographically smallest base for the code
-                char base = IUPAC::getPossibleSymbols(line[pos])[0];
-                line[pos] = base;
+                line[pos] = IUPAC::getPossibleSymbols(line[pos])[0];
                 // get the next ambiguous base
                 pos = line.find_first_not_of("ACGT");
             }
